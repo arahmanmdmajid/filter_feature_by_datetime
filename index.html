@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <title>
+      Filter features by attribute | Sample | ArcGIS API for JavaScript 4.18
+    </title>
+
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.18/esri/themes/light/main.css"
+    />
+    <script src="https://js.arcgis.com/4.18/"></script>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+
+      #seasons-filter {
+        height: 280px;
+        width: 100px;
+        visibility: hidden;
+      }
+
+      .season-item {
+        width: 100%;
+        padding: 12px;
+        text-align: center;
+        vertical-align: baseline;
+        cursor: pointer;
+        height: 40px;
+      }
+
+      .season-item:focus {
+        background-color: dimgrey;
+      }
+
+      .season-item:hover {
+        background-color: dimgrey;
+      }
+
+      #titleDiv {
+        padding: 10px;
+      }
+
+      #titleText {
+        font-size: 20pt;
+        font-weight: 60;
+        padding-bottom: 10px;
+      }
+    </style>
+    <script>
+      require([
+        "esri/views/MapView",
+        "esri/Map",
+        "esri/layers/FeatureLayer",
+        "esri/widgets/Expand"
+      ], function (MapView, Map, FeatureLayer, Expand) {
+        let eventLayerView;
+        
+         const eventPopup = {
+        "title": "تفاصيل الاحتفال",
+        "content": "<b>اسم المنطقة:</b> {region_en}<br><b>مدينة:</b> {amana_en}<br><b> تاريخ:</b> {date_time}<br>"
+      }
+
+        // event layer
+        const layer = new FeatureLayer({
+          portalItem: {
+            id: "1e130bbc2d5746319217fb52c40aca3d"
+          },
+          outFields: ["region_en","amana_en","date_time"],
+          popupTemplate: eventPopup
+        });
+
+        const map = new Map({
+          basemap: "gray-vector",
+          layers: [layer]
+        });
+
+        const view = new MapView({
+          map: map,
+          container: "viewDiv",
+          center: [44.6, 25.0],
+          zoom: 4
+        });
+
+        const seasonsNodes = document.querySelectorAll(`.season-item`);
+        const seasonsElement = document.getElementById("seasons-filter");
+
+        // click event handler for seasons choices
+        seasonsElement.addEventListener("click", filterBySeason);
+
+        // User clicked on Seasonal Month
+        // set an attribute filter on event layer view
+        // to display the events in that season
+        function filterBySeason(event) {
+          const selectedSeason = event.target.getAttribute("data-season");
+          let querytext = '';
+          if(selectedSeason == 'Jan'){
+            querytext = "date_time <= date '2022-01-31'";
+          }else if(selectedSeason == 'Feb'){
+            querytext = "date_time > date '2022-01-31' AND date_time <= date '2022-02-28'";
+          }else if(selectedSeason == 'Mar'){
+            querytext = "date_time > date '2022-02-28' AND date_time <= date '2022-03-31'";
+          } else if(selectedSeason == 'Apr'){
+            querytext = "date_time > date '2022-03-31' AND date_time <= date '2022-04-30'";
+          } else if(selectedSeason == 'May'){
+            querytext ="date_time > date '2022-04-30' AND date_time <= date '2022-05-31'";
+          } else if(selectedSeason == 'Jun') {
+            querytext = "date_time > date '2022-05-31' AND date_time <= date '2022-06-30'";
+          } else {
+            querytext = "date_time >= date '2022-01-01' AND date_time <= date '2022-06-30'";
+          }
+          eventLayerView.filter = {
+            where: querytext
+          };
+        }
+
+        view.whenLayerView(layer).then(function (layerView) {
+          // events layer loaded
+          // get a reference to the events layerview
+          eventLayerView = layerView;
+
+          // set up UI items
+          seasonsElement.style.visibility = "visible";
+          const seasonsExpand = new Expand({
+            view: view,
+            content: seasonsElement,
+            expandIconClass: "esri-icon-filter",
+            group: "top-left"
+          });
+          //clear the filters when user closes the expand widget
+          seasonsExpand.watch("expanded", function () {
+            if (!seasonsExpand.expanded) {
+              eventLayerView.filter = null;
+            }
+          });
+          view.ui.add("titleDiv", "top-left");
+          view.ui.add(seasonsExpand, "top-right");
+        });
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="seasons-filter" class="esri-widget">
+      <div class="season-item visible-season" data-season="All">كل المعالم</div>
+      <div class="season-item visible-season" data-season="Jan">يناير ٢٠٢٢</div>
+      <div class="season-item visible-season" data-season="Feb">فبراير ٢٠٢٢</div>
+      <div class="season-item visible-season" data-season="Mar">مارس ٢٠٢٢</div>
+      <div class="season-item visible-season" data-season="Apr">أبريل ٢٠٢٢</div>
+      <div class="season-item visible-season" data-season="May">مايو ٢٠٢٢</div>
+      <div class="season-item visible-season" data-season="Jun">يونيو ٢٠٢٢</div>
+    </div>
+    <div id="viewDiv"></div>
+    <div id="titleDiv" class="esri-widget" dir="rtl">
+      <div id="titleText">مناطق الجذب السياحي بالشهر</div>
+      <div>مناطق الجذب السياحي (يناير - ونيو ٢٠٢٢)</div>
+    </div>
+  </body>
+</html>
